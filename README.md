@@ -11,7 +11,7 @@ Zilog is a straightforward interpreted language designed for ease of use and rea
 | `number`       | Defines an integer variable. (1, 2, 500, 1000)                                          |
 | `swim`         | Defines a floating-point (double) variable. (1.1, 35.75)                                |
 | `raw`          | Defines a string variable ("String")                                                    |
-| `con`          | Defines a boolean variable. Accepts `true`, `false`, `1`, or `0`. (true, false, 1, 0)   |
+| `con`          | Defines a boolean variable. Accepts `true`, `false`, `1`, or `0`.   |
 
 The variable is defined by the C type. Base example: `number `name` = 1`
 
