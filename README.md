@@ -13,7 +13,7 @@ Zilog is a straightforward interpreted language designed for ease of use and rea
 | `raw`          | Defines a string variable  `"String"`                                                    |
 | `con`          | Defines a boolean variable. Accepts `true`, `false`, `1`, or `0`.   |
 
-The variable is defined by the C type. Base example: `number `name` = 1`
+The variable is defined by the C type. Base example: `number name = 1`
 
 ## Supported auxiliary commands
 
