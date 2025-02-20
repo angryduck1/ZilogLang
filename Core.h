@@ -97,6 +97,18 @@ private:
 		}
 	}
 
+	int increment_number(int& value) {
+		{
+			return ++value;
+		}
+	}
+
+	double increment_number(double& value) {
+		{
+			return ++value;
+		}
+	}
+
 	int compiling() {
 		while (counter < c) {
 			++current_line;
@@ -178,9 +190,7 @@ private:
 				}
 			}
 
-
 			if (next_line == "display") {
-				++current_line;
 				counter++;
 				while (pc[counter] != "end") {
 					string token = pc[counter];
@@ -224,22 +234,27 @@ private:
 					counter++;
 				}
 				cout << endl;
-				counter++;
+
+				if (counter + 1 >= c) {
+					return 0;
+				}
+				else {
+					counter++;
+				}
 			}
 
 			if (number.count(next_line) || swim.count(next_line) || raw.count(next_line) || con.count(next_line)) {
-				++current_line;
 				var = pc[counter];
 
 				if (pc[counter + 1] == "=") {
 					string value_str = pc[counter + 2];
 
 					try {
-						if (typ[var] == "number") {
+						if (typ[var] == "number" && value_str.substr(0, 2) != "++") {
 							int value = stoi(value_str);
 							set_variable(var, value);
 						}
-						else if (typ[var] == "swim") {
+						else if (typ[var] == "swim" && value_str.substr(0, 2) != "++") {
 							double value = stod(value_str);
 							set_variable(var, value);
 						}
@@ -262,43 +277,55 @@ private:
 							set_variable(var, value);
 						}
 						else {
-							if (number.count(value_str)) {
-								set_variable(var, number[value_str]);
-							}
-							else if (swim.count(value_str)) {
-								set_variable(var, swim[value_str]);
-							}
-							else if (raw.count(value_str)) {
-								set_variable(var, raw[value_str]);
-							}
-							else if (con.count(value_str)) {
-								set_variable(var, con[value_str]);
+							if (value_str.substr(0, 2) == "++") {
+								value_str = value_str.substr(2);
+								if (number.count(value_str)) {
+									set_variable(var, increment_number(number[value_str]));
+								}
+								else if (swim.count(value_str)) {
+									set_variable(var, increment_number(swim[value_str]));
+								}
 							}
 							else {
-								cerr << "Error in line " << current_line << ": Unknown type '" << type << "'" << endl;
-								return -1;
+								if (number.count(value_str)) {
+									set_variable(var, number[value_str]);
+								}
+								else if (swim.count(value_str)) {
+									set_variable(var, swim[value_str]);
+								}
+
+								else if (raw.count(value_str)) {
+									set_variable(var, raw[value_str]);
+								}
+								else if (con.count(value_str)) {
+									set_variable(var, con[value_str]);
+								}
+								else {
+									cerr << "Error in line " << current_line << ": Unknown type '" << type << "'" << endl;
+									return -1;
+								}
 							}
+
 						}
-
 					}
-					catch (const invalid_argument&) {
-						cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
-							<< type << "'" << endl;
-						return -1;
-					}
-					catch (const out_of_range&) {
-						cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
-							<< endl;
-						return -1;
-					}
-
-					counter += 3;
-					continue;
+						catch (const invalid_argument&) {
+							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+								<< type << "'" << endl;
+							return -1;
+						}
+						catch (const out_of_range&) {
+							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+								<< endl;
+							return -1;
+						}
 				}
-				else {
-					cerr << "Error in line " << current_line << endl;
-					return -1;
-				}
+
+				counter += 3;
+				continue;
+			}
+			else {
+				cerr << "Error in line " << current_line << endl;
+				return -1;
 			}
 		}
 		return 0;
