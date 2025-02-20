@@ -1,4 +1,4 @@
-swim test = 1.1
-display test
-swim test1 = 1.2
-display test1
+raw str_point = "Ducks are good!"
+str_point = "yes"
+
+display str_point " is fact" end
