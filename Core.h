@@ -97,30 +97,6 @@ private:
 		}
 	}
 
-	int increment_number(int& value) {
-		{
-			return ++value;
-		}
-	}
-
-	double increment_number(double& value) {
-		{
-			return ++value;
-		}
-	}
-
-	int decrement_number(int& value) {
-		{
-			return --value;
-		}
-	}
-
-	double decrement_number(double& value) {
-		{
-			return --value;
-		}
-	}
-
 	int compiling() {
 		while (counter < c) {
 			++current_line;
@@ -132,18 +108,36 @@ private:
 
 				if (counter + 2 < c && pc[counter + 2] == "=") {
 					string value_str = pc[counter + 3];
+					bool is_active = false;
 
 					try {
-						if (type == "number") {
+						if (number.count(value_str) && typ[value_str] == type) {
+							set_variable(var, number[value_str]);
+							is_active = true;
+						}
+						else if (swim.count(value_str) && typ[value_str] == type) {
+							set_variable(var, swim[value_str]);
+							is_active = true;
+						}
+						else if (raw.count(value_str) && typ[value_str] == type) {
+							set_variable(var, raw[value_str]);
+							is_active = true;
+						}
+						else if (con.count(value_str) && typ[value_str] == type) {
+							set_variable(var, con[value_str]);
+							is_active = true;
+						}
+
+						if (type == "number" && is_active == false) {
 							int value = stoi(value_str);
 							set_variable(var, value);
 							typ[var] = type;
 						}
-						else if (type == "swim") {
+						else if (type == "swim" && is_active == false) {
 							double value = stod(value_str);
 							set_variable(var, value);
 						}
-						else if (type == "raw" && value_str.front() == '"' && value_str.back() == '"') {
+						else if (type == "raw" && value_str.front() == '"' && value_str.back() == '"' && is_active == false) {
 							int i = 0;
 							for (auto ch : value_str) {
 								if (ch == '\\') {
@@ -153,31 +147,13 @@ private:
 							}
 							set_variable(var, value_str.substr(1, value_str.length() - 2));
 						}
-						else if (type == "con") {
+						else if (type == "con" && is_active == false) {
 							if (value_str != "true" && value_str != "false" && value_str != "1" && value_str != "0") {
 								cerr << "Error in line " << current_line << ": con must be true (1) or false (0). Your value '" << value_str << "'" << endl;
 								return -1;
 							}
 							bool value = (value_str == "1") || (value_str == "true");
 							set_variable(var, value);
-						}
-						else {
-							if (number.count(value_str)) {
-								set_variable(var, number[value_str]);
-							}
-							else if (swim.count(value_str)) {
-								set_variable(var, swim[value_str]);
-							}
-							else if (raw.count(value_str)) {
-								set_variable(var, raw[value_str]);
-							}
-							else if (con.count(value_str)) {
-								set_variable(var, con[value_str]);
-							}
-							else {
-								cerr << "Error in line " << current_line << ": Unknown type '" << type << "'" << endl;
-								return -1;
-							}
 						}
 
 					}
@@ -260,17 +236,37 @@ private:
 
 				if (pc[counter + 1] == "=") {
 					string value_str = pc[counter + 2];
+					string op = value_str.substr(0, 2);
+					bool is_active = false;
 
 					try {
-						if (typ[var] == "number" && value_str.substr(0, 2) != "++") {
+						if (number.count(value_str) && typ[value_str] == typ[var]) {
+							set_variable(var, number[value_str]);
+							is_active = true;
+						}
+						else if (swim.count(value_str) && typ[value_str] == typ[var]) {
+							set_variable(var, swim[value_str]);
+							is_active = true;
+						}
+
+						else if (raw.count(value_str) && typ[value_str] == typ[var]) {
+							set_variable(var, raw[value_str]);
+							is_active = true;
+						}
+						else if (con.count(value_str) && typ[value_str] == typ[var]) {
+							set_variable(var, con[value_str]);
+							is_active = true;
+						}
+
+						if (typ[var] == "number" && op != "++" && op != "--" && is_active == false) {
 							int value = stoi(value_str);
 							set_variable(var, value);
 						}
-						else if (typ[var] == "swim" && value_str.substr(0, 2) != "++") {
+						else if (typ[var] == "swim" && value_str.substr(0, 2) != "++" && value_str.substr(0, 2) != "--" && is_active == false) {
 							double value = stod(value_str);
 							set_variable(var, value);
 						}
-						else if (typ[var] == "raw" && value_str.front() == '"' && value_str.back() == '"') {
+						else if (typ[var] == "raw" && value_str.front() == '"' && value_str.back() == '"' && is_active == false) {
 							int i = 0;
 							for (auto ch : value_str) {
 								if (ch == '\\') {
@@ -280,7 +276,7 @@ private:
 							}
 							set_variable(var, value_str.substr(1, value_str.length() - 2));
 						}
-						else if (typ[var] == "con") {
+						else if (typ[var] == "con" && is_active == false) {
 							if (value_str != "true" && value_str != "false" && value_str != "1" && value_str != "0") {
 								cerr << "Error in line " << current_line << ": con must be true (1) or false (0). Your value '" << value_str << "'" << endl;
 								return -1;
@@ -289,32 +285,28 @@ private:
 							set_variable(var, value);
 						}
 						else {
-							if (value_str.substr(0, 2) == "++") {
-								value_str = value_str.substr(2);
-								if (number.count(value_str)) {
-									set_variable(var, increment_number(number[value_str]));
-								}
-								else if (swim.count(value_str)) {
-									set_variable(var, increment_number(swim[value_str]));
-								}
-							}
-							else {
-								if (number.count(value_str)) {
-									set_variable(var, number[value_str]);
-								}
-								else if (swim.count(value_str)) {
-									set_variable(var, swim[value_str]);
-								}
-
-								else if (raw.count(value_str)) {
-									set_variable(var, raw[value_str]);
-								}
-								else if (con.count(value_str)) {
-									set_variable(var, con[value_str]);
+							if (op == "++" || op == "--") {
+								if (op == "++") {
+									value_str = value_str.substr(2);
+									if (number.count(value_str)) {
+										number[var]++;
+										set_variable(var, number[var]);
+									}
+									else if (swim.count(value_str)) {
+										swim[var]++;
+										set_variable(var, swim[var]);
+									}
 								}
 								else {
-									cerr << "Error in line " << current_line << endl;
-									return -1;
+									value_str = value_str.substr(2);
+									if (number.count(value_str)) {
+										number[var]--;
+										set_variable(var, number[var]);
+									}
+									else if (swim.count(value_str)) {
+										swim[var]--;
+										set_variable(var, swim[var]);
+									}
 								}
 							}
 

@@ -1,21 +1,9 @@
-number i = 5
-swim test = 1.2
-raw test2 = "oh..."
+raw m = "my best "
+raw h = "hi "
+raw b = "bro"
+raw n = "none"
 
-++i
+n = m
+m = h
 
-display "TEST" end
-
-++test
-
-display test2 end
-
---i
---i
---i
-
-display i end
-
-++test
-
-display test end
+display m n b end
