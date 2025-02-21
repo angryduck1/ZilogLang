@@ -71,8 +71,8 @@ private:
 	map<string, bool> con;
 	map<string, string> typ;
 	map<unsigned, string> pc;
-	string type;
 	string var;
+	string type;
 	unsigned c = 0;
 	unsigned counter = 0;
 	unsigned current_line = 0;
@@ -106,6 +106,18 @@ private:
 	double increment_number(double& value) {
 		{
 			return ++value;
+		}
+	}
+
+	int decrement_number(int& value) {
+		{
+			return --value;
+		}
+	}
+
+	double decrement_number(double& value) {
+		{
+			return --value;
 		}
 	}
 
@@ -190,7 +202,7 @@ private:
 				}
 			}
 
-			if (next_line == "display") {
+			else if (next_line == "display") {
 				counter++;
 				while (pc[counter] != "end") {
 					string token = pc[counter];
@@ -235,7 +247,7 @@ private:
 				}
 				cout << endl;
 
-				if (counter + 1 >= c) {
+				if (counter + 1 > c) {
 					return 0;
 				}
 				else {
@@ -243,7 +255,7 @@ private:
 				}
 			}
 
-			if (number.count(next_line) || swim.count(next_line) || raw.count(next_line) || con.count(next_line)) {
+			else if (number.count(next_line) || swim.count(next_line) || raw.count(next_line) || con.count(next_line)) {
 				var = pc[counter];
 
 				if (pc[counter + 1] == "=") {
@@ -301,28 +313,57 @@ private:
 									set_variable(var, con[value_str]);
 								}
 								else {
-									cerr << "Error in line " << current_line << ": Unknown type '" << type << "'" << endl;
+									cerr << "Error in line " << current_line << endl;
 									return -1;
 								}
 							}
 
 						}
 					}
-						catch (const invalid_argument&) {
-							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
-								<< type << "'" << endl;
-							return -1;
-						}
-						catch (const out_of_range&) {
-							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
-								<< endl;
-							return -1;
-						}
+					catch (const invalid_argument&) {
+						cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+							<< type << "'" << endl;
+						return -1;
+					}
+					catch (const out_of_range&) {
+						cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+							<< endl;
+						return -1;
+					}
 				}
 
 				counter += 3;
 				continue;
 			}
+			else if (next_line.substr(0, 2) == "++" || next_line.substr(0, 2) == "--") {
+				string op = next_line.substr(0, 2);
+				string var_name = next_line.substr(2);
+
+				if (number.count(var_name)) {
+					if (op == "++") {
+						number[var_name]++;
+					}
+					else {
+						number[var_name]--;
+					}
+					set_variable(var_name, number[var_name]);
+				}
+				else if (swim.count(var_name)) {
+					if (op == "++") {
+						swim[var_name]++;
+					}
+					else {
+						swim[var_name]--;
+					}
+					set_variable(var_name, swim[var_name]);
+				}
+				else {
+					cerr << "Error in line " << current_line << ": Variable '" << var_name << "' not found." << endl;
+					return -1;
+				}
+				counter++;
+			}
+
 			else {
 				cerr << "Error in line " << current_line << endl;
 				return -1;

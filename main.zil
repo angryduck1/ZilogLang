@@ -1,4 +1,21 @@
-swim i = 6
-i = ++i
+number i = 5
+swim test = 1.2
+raw test2 = "oh..."
 
-display "i = " i end
+++i
+
+display "TEST" end
+
+++test
+
+display test2 end
+
+--i
+--i
+--i
+
+display i end
+
+++test
+
+display test end
