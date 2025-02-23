@@ -18,12 +18,11 @@ public:
 		string code;
 
 		while (getline(inFile, line)) {
-			auto comment_pos = line.find(";");
+			auto comment_pos = line.find("//");
 			auto space = line.find('"');
 
 			if (comment_pos != string::npos) {
 				line = line.substr(0, comment_pos);
-				code += line + "\n";
 			}
 
 			while (space != string::npos) {
@@ -97,6 +96,450 @@ private:
 		}
 	}
 
+	int check_opr(const string &value_str, bool is_create) {
+		if (value_str == "opr") {
+			string operation;
+			if (is_create) {
+				operation = pc[counter + 5];
+				counter += 3;
+			}
+			else {
+				operation = pc[counter + 4];
+				counter += 2;
+			}
+			string end_operation;
+			unsigned i = 3;
+			bool is_end = false;
+			int result_number = -2147483646;
+			double result_swim = -2147483646;
+			string f_o = pc[++counter];
+			string t_o = pc[counter += 2];
+
+			while (is_end != true) {
+				if (operation == "+") {
+					if (number.count(f_o) && number.count(t_o) && result_number == -2147483646) {
+						result_number = number[f_o] + number[t_o];
+						set_variable(var, result_number);
+					}
+					else if (swim.count(f_o) && swim.count(t_o) && result_swim == -2147483646) {
+						result_swim = swim[f_o] + swim[t_o];
+						set_variable(var, result_swim);
+					}
+					else if (number.count(t_o) && result_number != -2147483646) {
+						result_number = result_number + number[t_o];
+						set_variable(var, result_number);
+					}
+					else if (swim.count(t_o) && result_swim != -2147483646) {
+						result_swim = result_swim + swim[t_o];
+						set_variable(var, result_swim);
+					}
+
+					else if (number.count(f_o) && result_number == -2147483646) {
+						result_number = number[f_o] + stod(t_o);
+						set_variable(var, result_number);
+					}
+					else if (number.count(t_o) && result_number == -2147483646) {
+						result_number = number[t_o] + stod(f_o);
+						set_variable(var, result_number);
+					}
+					else if (swim.count(f_o) && result_swim == -2147483646) {
+						result_swim = swim[f_o] + stod(t_o);
+						set_variable(var, result_swim);
+					}
+					else if (swim.count(t_o) && result_swim == -2147483646) {
+						result_swim = swim[t_o] + stod(f_o);
+						set_variable(var, result_swim);
+					}
+
+					else if (result_number == -2147483646 && result_swim == -2147483646) {
+						try {
+							double val_fo = stod(f_o);
+							double val_to = stod(t_o);
+
+							double result = val_fo + val_to;
+
+							if (type == "number") {
+								result_number = static_cast<int>(result);
+								set_variable(var, result_number);
+							}
+							else if (type == "swim") {
+								result_swim = result;
+								set_variable(var, result_swim);
+							}
+							else {
+								cerr << "Error in line " << current_line << ": Using incompatible types." << endl;
+								return -1;
+							}
+
+						}
+						catch (const invalid_argument& e) {
+							cerr << "Error in line " << current_line << ": Invalid value for operation." << endl;
+							return -1;
+						}
+						catch (const out_of_range& e) {
+							cerr << "Error in line " << current_line << ": Value out of range." << endl;
+							return -1;
+						}
+					}
+					else if (result_number != -2147483646) {
+						try {
+							result_number = result_number + stod(t_o);
+							set_variable(var, result_number);
+						}
+						catch (const invalid_argument&) {
+							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+								<< type << "'" << endl;
+							return -1;
+						}
+						catch (const out_of_range&) {
+							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+								<< endl;
+							return -1;
+						}
+					}
+					else if (result_swim != -2147483646) {
+						try {
+							result_swim = result_swim + stod(t_o);
+							set_variable(var, result_swim);
+						}
+						catch (const invalid_argument&) {
+							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+								<< type << "'" << endl;
+							return -1;
+						}
+						catch (const out_of_range&) {
+							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+								<< endl;
+							return -1;
+						}
+					}
+
+				}
+				else if (operation == "-") {
+					if (number.count(f_o) && number.count(t_o) && result_number == -2147483646) {
+						result_number = number[f_o] - number[t_o];
+						set_variable(var, result_number);
+					}
+					else if (swim.count(f_o) && swim.count(t_o) && result_swim == -2147483646) {
+						result_swim = swim[f_o] - swim[t_o];
+						set_variable(var, result_swim);
+					}
+					else if (number.count(t_o) && result_number != -2147483646) {
+						result_number = result_number - number[t_o];
+						set_variable(var, result_number);
+					}
+					else if (swim.count(t_o) && result_swim != -2147483646) {
+						result_swim = result_swim - swim[t_o];
+						set_variable(var, result_swim);
+					}
+
+					else if (number.count(f_o) && result_number == -2147483646) {
+						result_number = number[f_o] - stod(t_o);
+						set_variable(var, result_number);
+					}
+					else if (number.count(t_o) && result_number == -2147483646) {
+						result_number = number[t_o] - stod(f_o);
+						set_variable(var, result_number);
+					}
+					else if (swim.count(f_o) && result_swim == -2147483646) {
+						result_swim = swim[f_o] - stod(t_o);
+						set_variable(var, result_swim);
+					}
+					else if (swim.count(t_o) && result_swim == -2147483646) {
+						result_swim = swim[t_o] - stod(f_o);
+						set_variable(var, result_swim);
+					}
+
+					else if (result_number == -2147483646 && result_swim == -2147483646) {
+						try {
+							double val_fo = stod(f_o);
+							double val_to = stod(t_o);
+
+							double result = val_fo - val_to;
+
+							if (type == "number") {
+								result_number = static_cast<int>(result);
+								set_variable(var, result_number);
+							}
+							else if (type == "swim") {
+								result_swim = result;
+								set_variable(var, result_swim);
+							}
+							else {
+								cerr << "Error in line " << current_line << ": Using incompatible types." << endl;
+								return -1;
+							}
+
+						}
+						catch (const invalid_argument& e) {
+							cerr << "Error in line " << current_line << ": Invalid value for operation." << endl;
+							return -1;
+						}
+						catch (const out_of_range& e) {
+							cerr << "Error in line " << current_line << ": Value out of range." << endl;
+							return -1;
+						}
+					}
+					else if (result_number != -2147483646) {
+						try {
+							result_number = result_number - stod(t_o);
+							set_variable(var, result_number);
+						}
+						catch (const invalid_argument&) {
+							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+								<< type << "'" << endl;
+							return -1;
+						}
+						catch (const out_of_range&) {
+							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+								<< endl;
+							return -1;
+						}
+					}
+					else if (result_swim != -2147483646) {
+						try {
+							result_swim = result_swim - stod(t_o);
+							set_variable(var, result_swim);
+						}
+						catch (const invalid_argument&) {
+							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+								<< type << "'" << endl;
+							return -1;
+						}
+						catch (const out_of_range&) {
+							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+								<< endl;
+							return -1;
+						}
+					}
+
+				}
+				else if (operation == "*") {
+					if (number.count(f_o) && number.count(t_o) && result_number == -2147483646) {
+						result_number = number[f_o] * number[t_o];
+						set_variable(var, result_number);
+					}
+					else if (swim.count(f_o) && swim.count(t_o) && result_swim == -2147483646) {
+						result_swim = swim[f_o] * swim[t_o];
+						set_variable(var, result_swim);
+					}
+					else if (number.count(t_o) && result_number != -2147483646) {
+						result_number = result_number * number[t_o];
+						set_variable(var, result_number);
+					}
+					else if (swim.count(t_o) && result_swim != -2147483646) {
+						result_swim = result_swim * swim[t_o];
+						set_variable(var, result_swim);
+					}
+
+					else if (number.count(f_o) && result_number == -2147483646) {
+						result_number = number[f_o] * stod(t_o);
+						set_variable(var, result_number);
+					}
+					else if (number.count(t_o) && result_number == -2147483646) {
+						result_number = number[t_o] * stod(f_o);
+						set_variable(var, result_number);
+					}
+					else if (swim.count(f_o) && result_swim == -2147483646) {
+						result_swim = swim[f_o] * stod(t_o);
+						set_variable(var, result_swim);
+					}
+					else if (swim.count(t_o) && result_swim == -2147483646) {
+						result_swim = swim[t_o] * stod(f_o);
+						set_variable(var, result_swim);
+					}
+
+					else if (result_number == -2147483646 && result_swim == -2147483646) {
+						try {
+							double val_fo = stod(f_o);
+							double val_to = stod(t_o);
+
+							double result = val_fo * val_to;
+
+							if (type == "number") {
+								result_number = static_cast<int>(result);
+								set_variable(var, result_number);
+							}
+							else if (type == "swim") {
+								result_swim = result;
+								set_variable(var, result_swim);
+							}
+							else {
+								cerr << "Error in line " << current_line << ": Using incompatible types." << endl;
+								return -1;
+							}
+
+						}
+						catch (const invalid_argument& e) {
+							cerr << "Error in line " << current_line << ": Invalid value for operation." << endl;
+							return -1;
+						}
+						catch (const out_of_range& e) {
+							cerr << "Error in line " << current_line << ": Value out of range." << endl;
+							return -1;
+						}
+					}
+					else if (result_number != -2147483646) {
+						try {
+							result_number = result_number * stod(t_o);
+							set_variable(var, result_number);
+						}
+						catch (const invalid_argument&) {
+							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+								<< type << "'" << endl;
+							return -1;
+						}
+						catch (const out_of_range&) {
+							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+								<< endl;
+							return -1;
+						}
+					}
+					else if (result_swim != -2147483646) {
+						try {
+							result_swim = result_swim * stod(t_o);
+							set_variable(var, result_swim);
+						}
+						catch (const invalid_argument&) {
+							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+								<< type << "'" << endl;
+							return -1;
+						}
+						catch (const out_of_range&) {
+							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+								<< endl;
+							return -1;
+						}
+					}
+
+				}
+				else if (operation == "/") {
+					if (number.count(f_o) && number.count(t_o) && result_number == -2147483646) {
+						result_number = number[f_o] / number[t_o];
+						set_variable(var, result_number);
+					}
+					else if (swim.count(f_o) && swim.count(t_o) && result_swim == -2147483646) {
+						result_swim = swim[f_o] / swim[t_o];
+						set_variable(var, result_swim);
+					}
+					else if (number.count(t_o) && result_number != -2147483646) {
+						result_number = result_number / number[t_o];
+						set_variable(var, result_number);
+					}
+					else if (swim.count(t_o) && result_swim != -2147483646) {
+						result_swim = result_swim / swim[t_o];
+						set_variable(var, result_swim);
+					}
+
+					else if (number.count(f_o) && result_number == -2147483646) {
+						result_number = number[f_o] / stod(t_o);
+						set_variable(var, result_number);
+					}
+					else if (number.count(t_o) && result_number == -2147483646) {
+						result_number = number[t_o] / stod(f_o);
+						set_variable(var, result_number);
+					}
+					else if (swim.count(f_o) && result_swim == -2147483646) {
+						result_swim = swim[f_o] / stod(t_o);
+						set_variable(var, result_swim);
+					}
+					else if (swim.count(t_o) && result_swim == -2147483646) {
+						result_swim = swim[t_o] / stod(f_o);
+						set_variable(var, result_swim);
+					}
+
+					else if (result_number == -2147483646 && result_swim == -2147483646) {
+						try {
+							double val_fo = stod(f_o);
+							double val_to = stod(t_o);
+
+							double result = val_fo / val_to;
+
+							if (type == "number") {
+								result_number = static_cast<int>(result);
+								set_variable(var, result_number);
+							}
+							else if (type == "swim") {
+								result_swim = result;
+								set_variable(var, result_swim);
+							}
+							else {
+								cerr << "Error in line " << current_line << ": Using incompatible types." << endl;
+								return -1;
+							}
+
+						}
+						catch (const invalid_argument& e) {
+							cerr << "Error in line " << current_line << ": Invalid value for operation." << endl;
+							return -1;
+						}
+						catch (const out_of_range& e) {
+							cerr << "Error in line " << current_line << ": Value out of range." << endl;
+							return -1;
+						}
+					}
+					else if (result_number != -2147483646) {
+						try {
+							result_number = result_number / stod(t_o);
+							set_variable(var, result_number);
+						}
+						catch (const invalid_argument&) {
+							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+								<< type << "'" << endl;
+							return -1;
+						}
+						catch (const out_of_range&) {
+							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+								<< endl;
+							return -1;
+						}
+					}
+					else if (result_swim != -2147483646) {
+						try {
+							result_swim = result_swim / stod(t_o);
+							set_variable(var, result_swim);
+						}
+						catch (const invalid_argument&) {
+							cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+								<< type << "'" << endl;
+							return -1;
+						}
+						catch (const out_of_range&) {
+							cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+								<< endl;
+							return -1;
+						}
+					}
+
+				}
+
+				operation = pc[counter + 1];
+				t_o = pc[counter + 2];
+				counter += 2;
+				i += 2;
+
+				if (pc[counter - 1] == "end") {
+					is_end = true;
+				}
+			}
+
+			if (counter + 1 >= c) {
+				if (is_create) {
+					typ[var] = type;
+				}
+				return 2;
+			}
+			else {
+				if (is_create) {
+					typ[var] = type;
+				}
+				return 0;
+			}
+		}
+
+		return 3;
+	}
+
 	int compiling() {
 		while (counter < c) {
 			++current_line;
@@ -109,6 +552,18 @@ private:
 				if (counter + 2 < c && pc[counter + 2] == "=") {
 					string value_str = pc[counter + 3];
 					bool is_active = false;
+
+					if (check_opr(value_str, 1) == 0) {
+						continue;
+					} else if (check_opr(value_str, 1) == -1) {
+						break;
+					}
+					else if (check_opr(value_str, 1) == 2) {
+						break;
+					}
+					else if (check_opr(value_str, 1) == 3) {
+						// Next
+					}
 
 					try {
 						if (number.count(value_str) && typ[value_str] == type) {
@@ -131,7 +586,6 @@ private:
 						if (type == "number" && is_active == false) {
 							int value = stoi(value_str);
 							set_variable(var, value);
-							typ[var] = type;
 						}
 						else if (type == "swim" && is_active == false) {
 							double value = stod(value_str);
@@ -182,6 +636,33 @@ private:
 				counter++;
 				while (pc[counter] != "end") {
 					string token = pc[counter];
+					string op = token.substr(0, 2);
+					bool is_active = false;
+
+					if (op == "++" || op == "--") {
+						if (op == "++") {
+							token = token.substr(2);
+							if (number.count(token)) {
+								number[token]++;
+								set_variable(var, number[token]);
+							}
+							else if (swim.count(token)) {
+								swim[token]++;
+								set_variable(var, swim[token]);
+							}
+						}
+						else {
+							token = token.substr(2);
+							if (number.count(token)) {
+								number[token]--;
+								set_variable(var, number[token]);
+							}
+							else if (swim.count(token)) {
+								swim[token]--;
+								set_variable(var, swim[token]);
+							}
+						}
+					}
 
 					if (token.front() == '"' && token.back() == '"') {
 						int i = 0;
@@ -193,25 +674,28 @@ private:
 						}
 						cout << token.substr(1, token.length() - 2);
 					}
-					else if (number.count(token)) {
-						cout << number[token];
-					}
-					else if (swim.count(token)) {
-						cout << swim[token];
-					}
-					else if (raw.count(token)) {
-						cout << raw[token];
-					}
-					else if (con.count(token)) {
-						cout << con[token];
-					}
-					else {
-						try {
-							cout << stod(token);
+
+					else if (is_active == false) {
+						if (number.count(token)) {
+							cout << number[token];
 						}
-						catch (const invalid_argument&) {
-							cerr << "Error in line " << current_line << ": Variable '" << token << "' not found." << endl;
-							return -1;
+						else if (swim.count(token)) {
+							cout << swim[token];
+						}
+						else if (raw.count(token)) {
+							cout << raw[token];
+						}
+						else if (con.count(token)) {
+							cout << con[token];
+						}
+						else {
+							try {
+								cout << stod(token);
+							}
+							catch (const invalid_argument&) {
+								cerr << "Error in line " << current_line << ": Variable '" << token << "' not found." << endl;
+								return -1;
+							}
 						}
 					}
 
@@ -238,6 +722,20 @@ private:
 					string value_str = pc[counter + 2];
 					string op = value_str.substr(0, 2);
 					bool is_active = false;
+
+
+					if (check_opr(value_str, 0) == 0) {
+						continue;
+					}
+					else if (check_opr(value_str, 0) == -1) {
+						break;
+					}
+					else if (check_opr(value_str, 0) == 2) {
+						break;
+					}
+					else if (check_opr(value_str, 0) == 3) {
+						// Next
+					}
 
 					try {
 						if (number.count(value_str) && typ[value_str] == typ[var]) {
