@@ -638,74 +638,81 @@ private:
 					string token = pc[counter];
 					string op = token.substr(0, 2);
 					bool is_active = false;
+					bool is_endl = false;
 
-					if (op == "++" || op == "--") {
-						if (op == "++") {
-							token = token.substr(2);
+					if (token == "endl") {
+						cout << endl;
+						is_endl = true;
+					}
+
+					if (!is_endl) {
+						if (op == "++" || op == "--") {
+							if (op == "++") {
+								token = token.substr(2);
+								if (number.count(token)) {
+									number[token]++;
+									set_variable(var, number[token]);
+								}
+								else if (swim.count(token)) {
+									swim[token]++;
+									set_variable(var, swim[token]);
+								}
+							}
+							else {
+								token = token.substr(2);
+								if (number.count(token)) {
+									number[token]--;
+									set_variable(var, number[token]);
+								}
+								else if (swim.count(token)) {
+									swim[token]--;
+									set_variable(var, swim[token]);
+								}
+							}
+						}
+
+						if (token.front() == '"' && token.back() == '"') {
+							int i = 0;
+							for (auto ch : token) {
+								if (ch == '\\') {
+									token[i] = ' ';
+								}
+								i++;
+							}
+							cout << token.substr(1, token.length() - 2);
+						}
+
+						else if (is_active == false) {
 							if (number.count(token)) {
-								number[token]++;
-								set_variable(var, number[token]);
+								cout << number[token];
 							}
 							else if (swim.count(token)) {
-								swim[token]++;
-								set_variable(var, swim[token]);
+								cout << swim[token];
+							}
+							else if (raw.count(token)) {
+								cout << raw[token];
+							}
+							else if (con.count(token)) {
+								cout << con[token];
+							}
+							else {
+								try {
+									cout << stod(token);
+								}
+								catch (const invalid_argument&) {
+									cerr << "Error in line " << current_line << ": Variable '" << token << "' not found." << endl;
+									return -1;
+								}
 							}
 						}
-						else {
-							token = token.substr(2);
-							if (number.count(token)) {
-								number[token]--;
-								set_variable(var, number[token]);
-							}
-							else if (swim.count(token)) {
-								swim[token]--;
-								set_variable(var, swim[token]);
-							}
-						}
-					}
 
-					if (token.front() == '"' && token.back() == '"') {
-						int i = 0;
-						for (auto ch : token) {
-							if (ch == '\\') {
-								token[i] = ' ';
-							}
-							i++;
+						if (counter > c) {
+							cerr << "Error in line " << current_line << ": Expected 'end' after variable names in display command." << endl;
+							return -1;
 						}
-						cout << token.substr(1, token.length() - 2);
-					}
-
-					else if (is_active == false) {
-						if (number.count(token)) {
-							cout << number[token];
-						}
-						else if (swim.count(token)) {
-							cout << swim[token];
-						}
-						else if (raw.count(token)) {
-							cout << raw[token];
-						}
-						else if (con.count(token)) {
-							cout << con[token];
-						}
-						else {
-							try {
-								cout << stod(token);
-							}
-							catch (const invalid_argument&) {
-								cerr << "Error in line " << current_line << ": Variable '" << token << "' not found." << endl;
-								return -1;
-							}
-						}
-					}
-
-					if (counter > c) {
-						cerr << "Error in line " << current_line << ": Expected 'end' after variable names in display command." << endl;
-						return -1;
 					}
 					counter++;
 				}
-				cout << endl;
 
 				if (counter + 1 > c) {
 					return 0;
@@ -851,6 +858,43 @@ private:
 					cerr << "Error in line " << current_line << ": Variable '" << var_name << "' not found." << endl;
 					return -1;
 				}
+				counter++;
+			} 
+			else if (next_line == "in") {
+				var = pc[++counter];
+
+				try {
+					if (typ[var] == "number") {
+						int result;
+						cin >> result;
+						number[var] = result;
+					}
+					else if (typ[var] == "swim") {
+						double result;
+						cin >> result;
+						swim[var] = result;
+					}
+					else if (typ[var] == "raw") {
+						string result;
+						cin >> result;
+						raw[var] = result;
+					}
+					else if (typ[var] == "con") {
+						bool result;
+						cin >> result;
+						con[var] = result;
+					}
+				} 
+				catch (const invalid_argument&) {
+					cerr << "Error in line " << current_line << endl;
+					return -1;
+				}
+				catch (const out_of_range&) {
+					cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+						<< endl;
+					return -1;
+				}
+
 				counter++;
 			}
 
