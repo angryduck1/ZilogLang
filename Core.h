@@ -11,8 +11,8 @@ using namespace std;
 
 class Interpritator {
 public:
-	Interpritator() {
-		ifstream inFile("main.zil");
+	Interpritator(string& path) {
+		ifstream inFile(path);
 
 		string line;
 		string code;
@@ -96,7 +96,564 @@ private:
 		}
 	}
 
-	int check_opr(const string &value_str, bool is_create) {
+	int everyone_commands() {
+		while (pc[counter] != "break") {
+			++current_line;
+			string next_line = pc[counter];
+
+			if ((next_line == "number" || next_line == "swim" || next_line == "raw" || next_line == "con")) {
+				type = next_line;
+				var = pc[counter + 1];
+
+				if (counter + 2 < c && pc[counter + 2] == "=") {
+					string value_str = pc[counter + 3];
+					bool is_active = false;
+
+					if (check_opr(value_str, 1) == 0) {
+						continue;
+					}
+					else if (check_opr(value_str, 1) == -1) {
+						break;
+					}
+					else if (check_opr(value_str, 1) == 2) {
+						break;
+					}
+					else if (check_opr(value_str, 1) == 3) {
+						// Next
+					}
+
+					try {
+						if (number.count(value_str) && typ[value_str] == type) {
+							set_variable(var, number[value_str]);
+							is_active = true;
+						}
+						else if (swim.count(value_str) && typ[value_str] == type) {
+							set_variable(var, swim[value_str]);
+							is_active = true;
+						}
+						else if (raw.count(value_str) && typ[value_str] == type) {
+							set_variable(var, raw[value_str]);
+							is_active = true;
+						}
+						else if (con.count(value_str) && typ[value_str] == type) {
+							set_variable(var, con[value_str]);
+							is_active = true;
+						}
+
+						if (type == "number" && is_active == false) {
+							int value = stoi(value_str);
+							set_variable(var, value);
+						}
+						else if (type == "swim" && is_active == false) {
+							double value = stod(value_str);
+							set_variable(var, value);
+						}
+						else if (type == "raw" && value_str.front() == '"' && value_str.back() == '"' && is_active == false) {
+							int i = 0;
+							for (auto ch : value_str) {
+								if (ch == '\\') {
+									value_str[i] = ' ';
+								}
+								i++;
+							}
+							set_variable(var, value_str.substr(1, value_str.length() - 2));
+						}
+						else if (type == "con" && is_active == false) {
+							if (value_str != "true" && value_str != "false" && value_str != "1" && value_str != "0") {
+								cerr << "Error in line " << current_line << ": con must be true (1) or false (0). Your value '" << value_str << "'" << endl;
+								return -1;
+							}
+							bool value = (value_str == "1") || (value_str == "true");
+							set_variable(var, value);
+						}
+
+					}
+					catch (const invalid_argument&) {
+						cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+							<< type << "'" << endl;
+						return -1;
+					}
+					catch (const out_of_range&) {
+						cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+							<< endl;
+						return -1;
+					}
+
+					counter += 4;
+					typ[var] = type;
+					continue;
+				}
+				else {
+					cerr << "Error in line " << current_line << endl;
+					return -1;
+				}
+			}
+
+			else if (next_line == "display") {
+				counter++;
+				while (pc[counter] != "end") {
+					string token = pc[counter];
+					string op = token.substr(0, 2);
+					bool is_active = false;
+					bool is_endl = false;
+
+					if (token == "endl") {
+						cout << endl;
+						is_endl = true;
+					}
+
+					if (!is_endl) {
+						if (op == "++" || op == "--") {
+							if (op == "++") {
+								token = token.substr(2);
+								if (number.count(token)) {
+									number[token]++;
+									set_variable(var, number[token]);
+								}
+								else if (swim.count(token)) {
+									swim[token]++;
+									set_variable(var, swim[token]);
+								}
+							}
+							else {
+								token = token.substr(2);
+								if (number.count(token)) {
+									number[token]--;
+									set_variable(var, number[token]);
+								}
+								else if (swim.count(token)) {
+									swim[token]--;
+									set_variable(var, swim[token]);
+								}
+							}
+						}
+
+						if (token.front() == '"' && token.back() == '"') {
+							int i = 0;
+							for (auto ch : token) {
+								if (ch == '\\') {
+									token[i] = ' ';
+								}
+								i++;
+							}
+							cout << token.substr(1, token.length() - 2);
+						}
+
+						else if (is_active == false) {
+							if (number.count(token)) {
+								cout << number[token];
+							}
+							else if (swim.count(token)) {
+								cout << swim[token];
+							}
+							else if (raw.count(token)) {
+								cout << raw[token];
+							}
+							else if (con.count(token)) {
+								cout << con[token];
+							}
+							else {
+								try {
+									cout << stod(token);
+								}
+								catch (const invalid_argument&) {
+									cerr << "Error in line " << current_line << ": Variable '" << token << "' not found." << endl;
+									return -1;
+								}
+							}
+						}
+
+						if (counter > c) {
+							cerr << "Error in line " << current_line << ": Expected 'end' after variable names in display command." << endl;
+							return -1;
+						}
+					}
+					counter++;
+				}
+
+				if (counter + 1 > c) {
+					return 0;
+				}
+				else {
+					counter++;
+				}
+			}
+
+			else if (number.count(next_line) || swim.count(next_line) || raw.count(next_line) || con.count(next_line)) {
+				var = pc[counter];
+
+				if (pc[counter + 1] == "=") {
+					string value_str = pc[counter + 2];
+					string op = value_str.substr(0, 2);
+					bool is_active = false;
+
+
+					if (check_opr(value_str, 0) == 0) {
+						continue;
+					}
+					else if (check_opr(value_str, 0) == -1) {
+						break;
+					}
+					else if (check_opr(value_str, 0) == 2) {
+						break;
+					}
+					else if (check_opr(value_str, 0) == 3) {
+						// Next
+					}
+
+					try {
+						if (number.count(value_str) && typ[value_str] == typ[var]) {
+							set_variable(var, number[value_str]);
+							is_active = true;
+						}
+						else if (swim.count(value_str) && typ[value_str] == typ[var]) {
+							set_variable(var, swim[value_str]);
+							is_active = true;
+						}
+
+						else if (raw.count(value_str) && typ[value_str] == typ[var]) {
+							set_variable(var, raw[value_str]);
+							is_active = true;
+						}
+						else if (con.count(value_str) && typ[value_str] == typ[var]) {
+							set_variable(var, con[value_str]);
+							is_active = true;
+						}
+
+						if (typ[var] == "number" && op != "++" && op != "--" && is_active == false) {
+							int value = stoi(value_str);
+							set_variable(var, value);
+						}
+						else if (typ[var] == "swim" && value_str.substr(0, 2) != "++" && value_str.substr(0, 2) != "--" && is_active == false) {
+							double value = stod(value_str);
+							set_variable(var, value);
+						}
+						else if (typ[var] == "raw" && value_str.front() == '"' && value_str.back() == '"' && is_active == false) {
+							int i = 0;
+							for (auto ch : value_str) {
+								if (ch == '\\') {
+									value_str[i] = ' ';
+								}
+								i++;
+							}
+							set_variable(var, value_str.substr(1, value_str.length() - 2));
+						}
+						else if (typ[var] == "con" && is_active == false) {
+							if (value_str != "true" && value_str != "false" && value_str != "1" && value_str != "0") {
+								cerr << "Error in line " << current_line << ": con must be true (1) or false (0). Your value '" << value_str << "'" << endl;
+								return -1;
+							}
+							bool value = (value_str == "1") || (value_str == "true");
+							set_variable(var, value);
+						}
+						else {
+							if (op == "++" || op == "--") {
+								if (op == "++") {
+									value_str = value_str.substr(2);
+									if (number.count(value_str)) {
+										number[var]++;
+										set_variable(var, number[var]);
+									}
+									else if (swim.count(value_str)) {
+										swim[var]++;
+										set_variable(var, swim[var]);
+									}
+								}
+								else {
+									value_str = value_str.substr(2);
+									if (number.count(value_str)) {
+										number[var]--;
+										set_variable(var, number[var]);
+									}
+									else if (swim.count(value_str)) {
+										swim[var]--;
+										set_variable(var, swim[var]);
+									}
+								}
+							}
+
+						}
+					}
+					catch (const invalid_argument&) {
+						cerr << "Error in line " << current_line << ": Invalid value '" << value_str << "' for type '"
+							<< type << "'" << endl;
+						return -1;
+					}
+					catch (const out_of_range&) {
+						cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+							<< endl;
+						return -1;
+					}
+				}
+
+				counter += 3;
+				continue;
+			}
+			else if (next_line.substr(0, 2) == "++" || next_line.substr(0, 2) == "--") {
+				string op = next_line.substr(0, 2);
+				string var_name = next_line.substr(2);
+
+				if (number.count(var_name)) {
+					if (op == "++") {
+						number[var_name]++;
+					}
+					else {
+						number[var_name]--;
+					}
+					set_variable(var_name, number[var_name]);
+				}
+				else if (swim.count(var_name)) {
+					if (op == "++") {
+						swim[var_name]++;
+					}
+					else {
+						swim[var_name]--;
+					}
+					set_variable(var_name, swim[var_name]);
+				}
+				else {
+					cerr << "Error in line " << current_line << ": Variable '" << var_name << "' not found." << endl;
+					return -1;
+				}
+				counter++;
+			}
+			else if (next_line == "in") {
+				var = pc[++counter];
+
+				try {
+					if (typ[var] == "number") {
+						int result;
+						cin >> result;
+						number[var] = result;
+					}
+					else if (typ[var] == "swim") {
+						double result;
+						cin >> result;
+						swim[var] = result;
+					}
+					else if (typ[var] == "raw") {
+						string result;
+						cin >> result;
+						raw[var] = result;
+					}
+					else if (typ[var] == "con") {
+						bool result;
+						cin >> result;
+						con[var] = result;
+					}
+				}
+				catch (const invalid_argument&) {
+					cerr << "Error in line " << current_line << endl;
+					return -1;
+				}
+				catch (const out_of_range&) {
+					cerr << "Error in line " << current_line << ": Value out of range for variable '" << var << "'"
+						<< endl;
+					return -1;
+				}
+
+				counter++;
+			}
+			else if (next_line == "if") {
+				string first_operand = pc[++counter];
+				string op = pc[++counter];
+				string second_operand = pc[++counter];
+
+
+				if (op == "==") {
+					if (raw.count(first_operand) && second_operand.front() == '"' && second_operand.back() == '"') {
+						if (raw[first_operand] == second_operand.substr(1, second_operand.length() - 2)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+							continue;
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+							continue;
+						}
+					}
+					else if (number.count(first_operand) && number.count(second_operand)) {
+						if (number[first_operand] == number[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (swim.count(first_operand) && swim.count(second_operand)) {
+						if (swim[first_operand] == swim[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (con.count(first_operand) && con.count(second_operand)) {
+						if (con[first_operand] == con[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (raw.count(first_operand) && raw.count(second_operand)) {
+						if (raw[first_operand] == raw[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (number.count(first_operand) && stod(second_operand)) {
+						if (number[first_operand] == stod(second_operand)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (swim.count(first_operand) && stod(second_operand)) {
+						if (swim[first_operand] == stod(second_operand)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (stod(first_operand) && stod(second_operand)) {
+						if (stod(first_operand) == stod(second_operand)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else {
+						while (pc[counter] != "break") {
+							pc[++counter];
+						}
+						pc[++counter];
+					}
+				}
+				else if (op == "!=") {
+					if (raw.count(first_operand) && second_operand.front() == '"' && second_operand.back() == '"') {
+						if (raw[first_operand] != second_operand.substr(1, second_operand.length() - 2)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+							continue;
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+							continue;
+						}
+					}
+					else if (number.count(first_operand) && number.count(second_operand)) {
+						if (number[first_operand] != number[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (swim.count(first_operand) && swim.count(second_operand)) {
+						if (swim[first_operand] != swim[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (con.count(first_operand) && con.count(second_operand)) {
+						if (con[first_operand] != con[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (raw.count(first_operand) && raw.count(second_operand)) {
+						if (raw[first_operand] != raw[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else {
+						while (pc[counter] != "break") {
+							pc[++counter];
+						}
+						pc[++counter];
+					}
+				}
+				}
+		}
+	}
+
+	int check_opr(const string& value_str, bool is_create) {
 		if (value_str == "opr") {
 			string operation;
 			if (is_create) {
@@ -555,7 +1112,8 @@ private:
 
 					if (check_opr(value_str, 1) == 0) {
 						continue;
-					} else if (check_opr(value_str, 1) == -1) {
+					}
+					else if (check_opr(value_str, 1) == -1) {
 						break;
 					}
 					else if (check_opr(value_str, 1) == 2) {
@@ -859,7 +1417,7 @@ private:
 					return -1;
 				}
 				counter++;
-			} 
+			}
 			else if (next_line == "in") {
 				var = pc[++counter];
 
@@ -884,7 +1442,7 @@ private:
 						cin >> result;
 						con[var] = result;
 					}
-				} 
+				}
 				catch (const invalid_argument&) {
 					cerr << "Error in line " << current_line << endl;
 					return -1;
@@ -896,6 +1454,202 @@ private:
 				}
 
 				counter++;
+			}
+			else if (next_line == "if") {
+				string first_operand = pc[++counter];
+				string op = pc[++counter];
+				string second_operand = pc[++counter];
+
+
+				if (op == "==") {
+					if (raw.count(first_operand) && second_operand.front() == '"' && second_operand.back() == '"') {
+						if (raw[first_operand] == second_operand.substr(1, second_operand.length() - 2)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+							continue;
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+							continue;
+						}
+					} 
+					else if (number.count(first_operand) && number.count(second_operand)) {
+						if (number[first_operand] == number[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (swim.count(first_operand) && swim.count(second_operand)) {
+						if (swim[first_operand] == swim[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (con.count(first_operand) && con.count(second_operand)) {
+						if (con[first_operand] == con[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (raw.count(first_operand) && raw.count(second_operand)) {
+						if (raw[first_operand] == raw[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (number.count(first_operand) && stod(second_operand)) {
+						if (number[first_operand] == stod(second_operand)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (swim.count(first_operand) && stod(second_operand)) {
+						if (swim[first_operand] == stod(second_operand)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (stod(first_operand) && stod(second_operand)) {
+						if (stod(first_operand) == stod(second_operand)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else {
+						while (pc[counter] != "break") {
+							pc[++counter];
+						}
+						pc[++counter];
+					}
+				}
+				else if (op == "!=") {
+					if (raw.count(first_operand) && second_operand.front() == '"' && second_operand.back() == '"') {
+						if (raw[first_operand] != second_operand.substr(1, second_operand.length() - 2)) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+							continue;
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+							continue;
+						}
+					}
+					else if (number.count(first_operand) && number.count(second_operand)) {
+						if (number[first_operand] != number[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (swim.count(first_operand) && swim.count(second_operand)) {
+						if (swim[first_operand] != swim[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (con.count(first_operand) && con.count(second_operand)) {
+						if (con[first_operand] != con[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else if (raw.count(first_operand) && raw.count(second_operand)) {
+						if (raw[first_operand] != raw[second_operand]) {
+							++counter;
+							everyone_commands();
+							pc[++counter];
+						}
+						else {
+							while (pc[counter] != "break") {
+								pc[++counter];
+							}
+							pc[++counter];
+						}
+					}
+					else {
+						while (pc[counter] != "break") {
+							pc[++counter];
+						}
+						pc[++counter];
+					}
+				}
 			}
 
 			else {

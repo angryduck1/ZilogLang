@@ -4,7 +4,13 @@
 
 using namespace std;
 
-int main() {
-	setlocale(LC_ALL, "ru");
-	Interpritator zl;
+int main(int argc, char* argv[]) {
+	string path;
+	if (argc > 1) {
+		path = argv[1];
+	}
+	else {
+		path = "main.zil";
+	}
+	Interpritator zl(path);
 }
